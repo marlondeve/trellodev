@@ -1,0 +1,143 @@
+-- 🚀 Crear base de datos
+CREATE DATABASE IF NOT EXISTS u990790165_spacedev CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE u990790165_spacedev;
+
+-- 🔐 Tabla de usuarios
+CREATE TABLE usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    rol ENUM('admin', 'miembro') DEFAULT 'miembro',
+    activo BOOLEAN DEFAULT TRUE,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 🧩 Tableros
+CREATE TABLE tableros (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    creado_por INT NOT NULL,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (creado_por) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+
+-- 🧩 Listas dentro de tableros
+CREATE TABLE listas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    orden INT NOT NULL,
+    tablero_id INT NOT NULL,
+    FOREIGN KEY (tablero_id) REFERENCES tableros(id) ON DELETE CASCADE
+);
+
+-- 🧩 Tarjetas dentro de listas
+CREATE TABLE tarjetas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    titulo VARCHAR(150) NOT NULL,
+    descripcion TEXT,
+    fecha_vencimiento DATE,
+    lista_id INT NOT NULL,
+    creado_por INT,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (lista_id) REFERENCES listas(id) ON DELETE CASCADE,
+    FOREIGN KEY (creado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+);
+
+-- 👥 Relación N:N entre tarjetas y usuarios (responsables)
+CREATE TABLE tarjeta_usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tarjeta_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    FOREIGN KEY (tarjeta_id) REFERENCES tarjetas(id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    UNIQUE KEY tarjeta_usuario_unico (tarjeta_id, usuario_id)
+);
+
+-- 📅 Eventos o reuniones
+CREATE TABLE eventos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    titulo VARCHAR(150) NOT NULL,
+    descripcion TEXT,
+    fecha_inicio DATETIME NOT NULL,
+    fecha_fin DATETIME NOT NULL,
+    link_reunion VARCHAR(255),
+    creado_por INT NOT NULL,
+    FOREIGN KEY (creado_por) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+
+-- 👥 Relación N:N entre eventos y participantes
+CREATE TABLE evento_participantes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    evento_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    FOREIGN KEY (evento_id) REFERENCES eventos(id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    UNIQUE KEY evento_usuario_unico (evento_id, usuario_id)
+);
+
+-- 🏷️ Etiquetas para tarjetas
+CREATE TABLE etiquetas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    color VARCHAR(7) NOT NULL DEFAULT '#3B82F6',
+    tablero_id INT NOT NULL,
+    FOREIGN KEY (tablero_id) REFERENCES tableros(id) ON DELETE CASCADE
+);
+
+-- 🏷️ Relación N:N entre tarjetas y etiquetas
+CREATE TABLE tarjeta_etiquetas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tarjeta_id INT NOT NULL,
+    etiqueta_id INT NOT NULL,
+    FOREIGN KEY (tarjeta_id) REFERENCES tarjetas(id) ON DELETE CASCADE,
+    FOREIGN KEY (etiqueta_id) REFERENCES etiquetas(id) ON DELETE CASCADE,
+    UNIQUE KEY tarjeta_etiqueta_unico (tarjeta_id, etiqueta_id)
+);
+
+-- 💬 Comentarios en tarjetas
+CREATE TABLE comentarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    contenido TEXT NOT NULL,
+    tarjeta_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tarjeta_id) REFERENCES tarjetas(id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+
+-- 📎 Archivos adjuntos
+CREATE TABLE archivos_adjuntos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_archivo VARCHAR(255) NOT NULL,
+    ruta_archivo VARCHAR(500) NOT NULL,
+    tipo_archivo VARCHAR(100),
+    tamano INT,
+    tarjeta_id INT NOT NULL,
+    subido_por INT NOT NULL,
+    fecha_subida TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tarjeta_id) REFERENCES tarjetas(id) ON DELETE CASCADE,
+    FOREIGN KEY (subido_por) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+
+-- 🔧 Insertar datos iniciales
+-- Crear tablero por defecto
+INSERT INTO tableros (id, nombre, descripcion, creado_por) VALUES 
+(1, 'Tablero Principal', 'Tablero principal del proyecto', 1);
+
+-- Crear listas por defecto
+INSERT INTO listas (nombre, orden, tablero_id) VALUES 
+('Pendiente', 1, 1),
+('En Proceso', 2, 1),
+('En Aprobación', 3, 1),
+('Detenido', 4, 1),
+('Finalizado', 5, 1);
+
+-- Crear etiquetas por defecto
+INSERT INTO etiquetas (nombre, color, tablero_id) VALUES 
+('Urgente', '#EF4444', 1),
+('Bug', '#DC2626', 1),
+('Mejora', '#10B981', 1),
+('Documentación', '#F59E0B', 1),
+('Diseño', '#8B5CF6', 1);
