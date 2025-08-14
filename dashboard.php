@@ -746,6 +746,7 @@ if ($lista_ids) {
             if (fechaInput) fechaInput.value = fechaActual;
             if (horaInput) horaInput.value = horaActual;
             
+            
             if (modal) {
                 modal.classList.remove('hidden');
                 console.log('Modal nuevo evento abierta');
